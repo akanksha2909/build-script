@@ -73,34 +73,34 @@ import groovy.util.XmlSlurper
            stage('Code Coverage'){
         
                bat(/"${mvnHome}\bin\mvn"  cobertura:cobertura/)
-              // println '1'
+               println '1'
                XmlParser parser = new XmlParser();
-             // println '2'
+              println '2'
                parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false) 
                parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            // println '3'
+             println '3'
                coverage = parser.parse(new FileInputStream("${WORKSPACE}\\target\\site\\cobertura\\coverage.xml"));
-             // println '-----'
+              println '-----'
               def line= coverage.'@line-rate';
               def branch= coverage.'@branch-rate';
               double d = Double.valueOf( (String) line );
               double e = Double.valueOf( (String) branch );
               double f = Double.valueOf( (String) coverage_percentage )*0.01;
-            //  println "your code coverage percentege is ${d}"
-            // println "${e} ${f} ${d}"
+              println "your code coverage percentege is ${d}"
+             println "${e} ${f} ${d}"
              publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'target\\site\\cobertura', reportFiles: 'index.html', reportName: 'cobertura HTML Report'])
-            //  println 'report done'
+              println 'report done'
               if(d < f && e < f){
                    emailext body: '''<p><b>Code coverage does not met the thresholds<b><b>
 <p><b> 
 COBERTURA-CODE-COVERAGE-REPORT-   </b><a href="$JENKINS_URL/job/$JOB_NAME/Cobertura_Html_Report/">$JENKINS_URL/job/$JOB_NAME/Cobertura_Html_Report/ </a> </p><p>''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - cobertura failure ', to: 'user1@chdsmtp.com'
 
                  }  
-              //   println 'done'
+                println 'done'
            }
            }catch(err){
-               //  println "${e} ${f} ${d}"
-             //  println '${err.getMessage()}'
+                 println "${e} ${f} ${d}"
+               println '${err.getMessage()}'
               emailext body: '''<p><u><b>$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:</b></u></p><p><b>Build Details </b><a href= "$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER</a></p>
 ''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - Cobertura did not run', to: 'user1@chdsmtp.com'
 
