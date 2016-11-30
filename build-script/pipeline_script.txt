@@ -1,0 +1,113 @@
+//import groovy.xml.dom.DOMCategory
+import groovy.util.XmlParser
+import groovy.util.XmlSlurper
+
+    node {
+       def mvnHome
+                  
+                  try{
+                                   stage('Code Checkout') { 
+                                                  // Get some code from a GitHub repository
+                                                  git "${git_url}"
+                                                  // Get the Maven tool.
+                                                  // ** NOTE: This 'Maven' Maven tool must be configured
+                                                  // **       in the global tool configuration.           
+                                                  mvnHome = tool 'Maven'
+                                   }
+                                  }
+                    catch(err) { 
+                                emailext body: '''<p><u><b>$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:</b></u></p><p><b>Build Details </b><a href= "$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER</a></p>
+''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - git checkout error', to: 'user1@chdsmtp.com'
+
+                                                currentBuild.result = 'FAILURE'
+              throw err;                            
+                                } 
+                    try{
+                         stage('Maven compile') {
+                                                  // Run the maven build
+                                                  if (isUnix()) {
+                                                                sh "cd bean-validation"
+                                                                sh "'${mvnHome}/bin/mvn' -Dmaven.test.failure.ignore compile"
+                                                  } else {
+                                                                bat(/"${mvnHome}\bin\mvn"  clean compile/)
+                                                  }
+                                      }
+                                                }
+                    catch(err) {
+                               emailext body: '''<p><u><b>$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:</b></u></p>
+<p><b>Build Details </b><a href= "$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER</a></p>
+''', recipientProviders: [[$class: 'DevelopersRecipientProvider']], subject: '$PROJECT_NAME - Build # $BUILD_NUMBER -compilation failure ', to: 'user1@chdsmtp.com'
+                                       
+                currentBuild.result = 'FAILURE'
+              throw err }
+  try {                         
+       stage('Code Quality'){
+       
+            bat(/"${mvnHome}\bin\mvn"  sonar:sonar/) 
+                                //            mail bcc: '', body: 'sonar qube report at $url', cc: '', from: 'JenkinsAdmin@chdsmtp.com', replyTo: '', subject: 'project_name: sonarQube report', to: 'User1@chdsmtp.com'
+           }
+  }
+           catch(err){
+          emailext body: '''<p><u><b>$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:</b></u></p><p><b>Build Details </b><a href= "$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER</a></p>
+''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - SonarQube failure', to: 'user1@chdsmtp.com'
+            currentBuild.result = 'FAILURE'
+           }
+       try {  
+           stage('Testing'){
+       
+           bat(/"${mvnHome}\bin\mvn"  test -B/)
+           junit testDataPublishers: [[$class: 'AttachmentPublisher']], testResults: 'target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloAppTest.xml,target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloTest.xml'
+           }}
+           catch(err) {
+              step([$class: 'JUnitResultArchiver', testResults: '**/target/surefire-reports/TEST-*.xml'])
+              //mail bcc: '', body: 'Test cases failure report: ', cc: '', from: 'user1@chdsmtp.com', replyTo: '', subject: 'project_name: Test_cases_failed', to: 'User1@chdsmtp.com'
+              emailext body: '''<p><u><b>$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:</b></u></p>
+<p><b>Build Details </b><a href= "$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER</a></p>
+<p><b>Test Reports--</b><a href="$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER/testReport/">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER/testReport/</a></p>''', recipientProviders: [[$class: 'DevelopersRecipientProvider']], subject: '$PROJECT_NAME - Build # $BUILD_NUMBER -Test cases Failure', to: 'user1@chdsmtp.com'
+              junit testDataPublishers: [[$class: 'AttachmentPublisher']], testResults: 'target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloAppTest.xml,target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloTest.xml'
+              currentBuild.result = 'Unstable'
+              throw err
+         }  
+       
+       try{
+           stage('Code Coverage'){
+        
+               bat(/"${mvnHome}\bin\mvn"  cobertura:cobertura/)
+              // println '1'
+               XmlParser parser = new XmlParser();
+             // println '2'
+               parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false) 
+               parser.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            // println '3'
+               coverage = parser.parse(new FileInputStream("${WORKSPACE}\\target\\site\\cobertura\\coverage.xml"));
+             // println '-----'
+              def line= coverage.'@line-rate';
+              def branch= coverage.'@branch-rate';
+              double d = Double.valueOf( (String) line );
+              double e = Double.valueOf( (String) branch );
+              double f = Double.valueOf( (String) coverage_percentage )*0.01;
+            //  println "your code coverage percentege is ${d}"
+            // println "${e} ${f} ${d}"
+             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'target\\site\\cobertura', reportFiles: 'index.html', reportName: 'cobertura HTML Report'])
+            //  println 'report done'
+              if(d < f && e < f){
+                   emailext body: '''<p><b>Code coverage does not met the thresholds<b><b>
+<p><b> 
+COBERTURA-CODE-COVERAGE-REPORT-   </b><a href="$JENKINS_URL/job/$JOB_NAME/Cobertura_Html_Report/">$JENKINS_URL/job/$JOB_NAME/Cobertura_Html_Report/ </a> </p><p>''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - cobertura failure ', to: 'user1@chdsmtp.com'
+
+                 }  
+              //   println 'done'
+           }
+           }catch(err){
+               //  println "${e} ${f} ${d}"
+             //  println '${err.getMessage()}'
+              emailext body: '''<p><u><b>$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:</b></u></p><p><b>Build Details </b><a href= "$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER</a></p>
+''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - Cobertura did not run', to: 'user1@chdsmtp.com'
+
+               currentBuild.result = 'FAILURE'
+          }
+          
+       
+    
+   
+}
