@@ -70,7 +70,7 @@ import groovy.util.XmlSlurper
               junit testDataPublishers: [[$class: 'AttachmentPublisher']], testResults: 'target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloAppTest.xml,target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloTest.xml'
               currentBuild.result = 'Unstable'
             //  throw err
-             bat(/ die /);
+             bat(/ exit /);
              die();
          }  
        
