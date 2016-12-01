@@ -68,9 +68,8 @@ import groovy.util.XmlSlurper
 <p><b>Build Details </b><a href= "$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER</a></p>
 <p><b>Test Reports--</b><a href="$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER/testReport/">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER/testReport/</a></p>''', recipientProviders: [[$class: 'DevelopersRecipientProvider']], subject: '$PROJECT_NAME - Build # $BUILD_NUMBER -Test cases Failure', to: 'user1@chdsmtp.com'
               junit testDataPublishers: [[$class: 'AttachmentPublisher']], testResults: 'target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloAppTest.xml,target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloTest.xml'
-              currentBuild.result = 'Unstable'
-            //  throw err
-             bat(/ exit /);
+              currentBuild.result = 'Failure'
+           
              }  
        
        try{
