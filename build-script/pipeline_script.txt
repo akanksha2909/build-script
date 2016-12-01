@@ -20,8 +20,8 @@ import groovy.util.XmlSlurper
 ''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - git checkout error', to: 'user1@chdsmtp.com'
 
                                                 currentBuild.result = 'FAILURE'
-             // throw err;       
-              exit;
+              throw err;       
+             
                                 } 
                     try{
                          stage('Maven compile') {
@@ -40,8 +40,8 @@ import groovy.util.XmlSlurper
 ''', recipientProviders: [[$class: 'DevelopersRecipientProvider']], subject: '$PROJECT_NAME - Build # $BUILD_NUMBER -compilation failure ', to: 'user1@chdsmtp.com'
                                        
                 currentBuild.result = 'FAILURE'
-              //throw err
-              exit;}
+              throw err;
+              }
   try {                         
        stage('Code Quality'){
        
@@ -53,7 +53,7 @@ import groovy.util.XmlSlurper
           emailext body: '''<p><u><b>$PROJECT_NAME - Build # $BUILD_NUMBER - $BUILD_STATUS:</b></u></p><p><b>Build Details </b><a href= "$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER</a></p>
 ''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - SonarQube failure', to: 'user1@chdsmtp.com'
             currentBuild.result = 'FAILURE'
-            exit;
+             throw err;
            }
        try {  
            stage('Testing'){
@@ -68,7 +68,8 @@ import groovy.util.XmlSlurper
 <p><b>Build Details </b><a href= "$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER</a></p>
 <p><b>Test Reports--</b><a href="$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER/testReport/">$JENKINS_URL/job/$JOB_NAME/$BUILD_NUMBER/testReport/</a></p>''', recipientProviders: [[$class: 'DevelopersRecipientProvider']], subject: '$PROJECT_NAME - Build # $BUILD_NUMBER -Test cases Failure', to: 'user1@chdsmtp.com'
               junit testDataPublishers: [[$class: 'AttachmentPublisher']], testResults: 'target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloAppTest.xml,target\\surefire-reports\\TEST-com.example.javamavenjunithelloworld.HelloTest.xml'
-              currentBuild.result = 'Failure'
+              currentBuild.result = 'FAILURE';
+              throw err;
            
              }  
        
@@ -108,7 +109,8 @@ COBERTURA-CODE-COVERAGE-REPORT-   </b><a href="$JENKINS_URL/job/$JOB_NAME/Cobert
 ''', subject: '$PROJECT_NAME - Build # $BUILD_NUMBER - Cobertura did not run', to: 'user1@chdsmtp.com'
 
                currentBuild.result = 'FAILURE'
-               exit;
+               throw err;
+               
           }
           
        
