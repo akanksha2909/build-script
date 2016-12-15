@@ -7,6 +7,7 @@ import groovy.util.XmlSlurper
                   
                   try{
                                    stage('Code Checkout') { 
+                                                   //do somethimng
                                                   // Get some code from a GitHub repository
                                                   git "${git_url}"
                                                   // Get the Maven tool.
