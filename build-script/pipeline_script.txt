@@ -4,12 +4,12 @@ import groovy.util.XmlSlurper
 
     node {
        def mvnHome
-                  
+       def git_home = tool 'git'      
                   try{
                                    stage('Code Checkout') { 
                                                   
                                                   // Get some code from a GitHub repository
-                                                  git "${git_url}"
+                                                  "{git_home}" "${git_url}"
                                                   // Get the Maven tool.
                                                   // ** NOTE: This 'Maven' Maven tool must be configured
                                                   // **       in the global tool configuration.           
