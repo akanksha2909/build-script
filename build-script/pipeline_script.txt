@@ -9,7 +9,7 @@ import groovy.util.XmlSlurper
                                    stage('Code Checkout') { 
                                                   
                                                   // Get some code from a GitHub repository
-                                                  bat(/"${git_home}"  ${git_url}/)
+                                                  ${git_home}  ${git_url}
                                                   // Get the Maven tool.
                                                   // ** NOTE: This 'Maven' Maven tool must be configured
                                                   // **       in the global tool configuration.           
